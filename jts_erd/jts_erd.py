@@ -69,21 +69,18 @@ Options:
 """
 
 
-def get_graph(json_database_schema, **options):
+def get_graph(json_table_schema, **options):
     """
-    Create and return a graph from the given *json_database_schema*.
+    Create and return a graph from the given *json_table_schema*.
 
     All keys from :any:`options_defaults` are allowed in *kwargs*.
     """
     opt = options_defaults.copy()
     opt.update(options)
-    database = json_database_schema['database_name']
-    datetime = json_database_schema['generation_begin_time']
-    namespaces = json_database_schema['datapackages']
     schema_graph = pgv.AGraph(
         strict=False,
         directed=True,
-        name='Postgres database %s (as of %s)' % (database, datetime),
+        name='Changeme',
         rankdir=opt['rankdir'],
         fontname=opt['fontname'],
         fontsize=opt['fontsize'],
@@ -94,107 +91,101 @@ def get_graph(json_database_schema, **options):
     # inventory
     present_tables = {}
     tables_with_edges = set()  # contains only tables having at least one edge
-    for namespace in namespaces:
-        namespace_name = namespace['datapackage']
-        for table in namespace['resources']:
-            present_tables[(namespace_name, table['name'])] = table
-            if 'foreignKeys' in table:
-                for foreign_key in table['foreignKeys']:
-                    reference = foreign_key['reference']
-                    tables_with_edges.add((namespace_name, table['name']))
-                    tables_with_edges.add((reference['datapackage'],
-                                           reference['resource']))
+    for table in json_table_schema['resources']:
+        present_tables[(json_table_schema['name'], table['name'])] = table
+        if 'foreignKeys' in table['schema']:
+            for foreign_key in table['schema']['foreignKeys']:
+                reference = foreign_key['reference']
+                tables_with_edges.add((json_table_schema['name'], table['name']))
+                tables_with_edges.add((json_table_schema['name'],
+                                       reference['resource']))
 
     # add table nodes
-    for namespace in namespaces:
-        namespace_name = namespace['datapackage']
-        for table in namespace['resources']:
-            has_edge = (namespace_name, table['name']) in tables_with_edges
-            if not opt['omit_isolated_tables'] or has_edge:
-                _graph_add_table(opt, schema_graph, namespace_name, table)
+    for table in json_table_schema['resources']:
+        has_edge = (json_table_schema['name'], table['name']) in tables_with_edges
+        if not opt['omit_isolated_tables'] or has_edge:
+            _graph_add_table(opt, schema_graph, json_table_schema['name'], table)
 
     # add foreign key edges
-    for namespace in namespaces:
-        namespace_name = namespace['datapackage']
-        table_edges = set()
-        for tail_table in namespace['resources']:
-            tail_table_name = tail_table['name']
-            if 'foreignKeys' in tail_table:
-                for foreign_key in tail_table['foreignKeys']:
-                    columns = foreign_key['fields']
-                    if isinstance(columns, str):
-                        tail_column_names = [columns]
-                    else:
-                        tail_column_names = columns
-                    reference = foreign_key['reference']
-                    head_namespace_name = reference['datapackage']
-                    head_table_name = reference['resource']
-                    head_column_names = reference['fields']
-                    head_table = present_tables[
-                        (head_namespace_name, head_table_name)
-                    ]
-                    enforced = foreign_key.get('enforced', True)
-                    color = 'black' if enforced else 'blue'
-                    card_self = reference.get('cardinalitySelf')
-                    card_ref = reference.get('cardinalityRef')
-                    if card_self or card_ref:
-                        if opt['rankdir'] == 'RL':
-                            label = '%s \u2194 %s' % (card_ref, card_self)
-                        else:
-                            label = '%s \u2194 %s' % (card_self, card_ref)
-                    else:
-                        label = ''
+    table_edges = set()
+    for tail_table in json_table_schema['resources']:
+        tail_table_name = tail_table['name']
+        if 'foreignKeys' in tail_table['schema']:
+            for foreign_key in tail_table['schema']['foreignKeys']:
+                columns = foreign_key['fields']
+                if isinstance(columns, str):
+                    tail_column_names = [columns]
+                else:
+                    tail_column_names = columns
+                reference = foreign_key['reference']
+                head_namespace_name = json_table_schema['name']
+                head_table_name = reference['resource']
+                head_column_names = reference['fields']
+                head_table = present_tables[
+                    (head_namespace_name, head_table_name)
+                ]
+                enforced = foreign_key.get('enforced', True)
+                color = 'black' if enforced else 'blue'
+                card_self = reference.get('cardinalitySelf')
+                card_ref = reference.get('cardinalityRef')
+                if card_self or card_ref:
                     if opt['rankdir'] == 'RL':
-                        tooltip = '%s     %s(%s) \u2194 %s(%s)' % (
-                            label,
-                            head_table_name,
-                            ', '.join(head_column_names),
-                            tail_table_name,
-                            ', '.join(tail_column_names)
-                        )
+                        label = '%s \u2194 %s' % (card_ref, card_self)
                     else:
-                        tooltip = '%s     %s(%s) \u2194 %s(%s)' % (
-                            label,
-                            tail_table_name,
-                            ', '.join(tail_column_names),
-                            head_table_name,
-                            ', '.join(head_column_names)
-                        )
-                    if reference.get('label'):
-                        label += '\n' + reference.get('label')
-                        tooltip += '     ' + reference.get('label')
-                    else:
-                        edge_name = reference.get('name')
-                        if edge_name:
-                            label += '   ' + edge_name
-                            tooltip += '     ' + edge_name
-                    label = label.strip()
-                    tooltip = tooltip.strip()
-                    if opt['display_columns']:
-                        _add_foreign_key_edge(
-                            schema_graph,
-                            tail_table_name,
-                            head_table_name,
-                            tail_table,
-                            head_table,
-                            tail_column_names,
-                            head_column_names,
-                            label,
-                            tooltip,
-                            opt,
-                            color,
-                            card_self,
-                            card_ref
-                        )
-                    if not opt['display_columns']:
-                        table_edges.add((tail_table_name, head_table_name))
-        if not opt['display_columns']:
-            for tail_table_name, head_table_name in table_edges:
-                schema_graph.add_edge(
-                    tail_table_name,
-                    head_table_name,
-                    color='black'
-                )
+                        label = '%s \u2194 %s' % (card_self, card_ref)
+                else:
+                    label = ''
+                if opt['rankdir'] == 'RL':
+                    tooltip = '%s     %s(%s) \u2194 %s(%s)' % (
+                        label,
+                        head_table_name,
+                        ', '.join(head_column_names),
+                        tail_table_name,
+                        ', '.join(tail_column_names)
+                    )
+                else:
+                    tooltip = '%s     %s(%s) \u2194 %s(%s)' % (
+                        label,
+                        tail_table_name,
+                        ', '.join(tail_column_names),
+                        head_table_name,
+                        ', '.join(head_column_names)
+                    )
+                if reference.get('label'):
+                    label += '\n' + reference.get('label')
+                    tooltip += '     ' + reference.get('label')
+                else:
+                    edge_name = reference.get('name')
+                    if edge_name:
+                        label += '   ' + edge_name
+                        tooltip += '     ' + edge_name
+                label = label.strip()
+                tooltip = tooltip.strip()
+                if opt['display_columns']:
+                    _add_foreign_key_edge(
+                        schema_graph,
+                        tail_table_name,
+                        head_table_name,
+                        tail_table,
+                        head_table,
+                        tail_column_names,
+                        head_column_names,
+                        label,
+                        tooltip,
+                        opt,
+                        color,
+                        card_self,
+                        card_ref
+                    )
+                if not opt['display_columns']:
+                    table_edges.add((tail_table_name, head_table_name))
+    if not opt['display_columns']:
+        for tail_table_name, head_table_name in table_edges:
+            schema_graph.add_edge(
+                tail_table_name,
+                head_table_name,
+                color='black'
+            )
     return schema_graph
 
 
@@ -236,14 +227,14 @@ def _graph_add_table(opt, graph, namespace_name, table,
         if 'primaryKey' in table:
             pk = table['primaryKey']
             for i, col_name in enumerate(pk):
-                col = [c for c in table['fields'] if c['name'] == col_name][0]
+                col = [c for c in table['schema']['fields'] if c['name'] == col_name][0]
                 col_display = _get_column_display(display, table, col)
                 table_row_html = _get_table_row_html(
                     opt, display, i + 1, col_display, highlight=True)
                 html_rows.append(table_row_html)
         else:
             pk = []
-        columns = [c for c in table['fields'] if c['name'] not in pk]
+        columns = [c for c in table['schema']['fields'] if c['name'] not in pk]
         #sorted_columns = sorted(columns, key=lambda c: c['pos'])
         for col_i, col in enumerate(columns):
             col_display = _get_column_display(display, table, col)
@@ -483,25 +474,22 @@ def _get_port(table, column):
     Row 0 is the row containing the table name. It is followed by
     rows describing primary key columns and then by all other columns.
     """
-    if 'primaryKey' in table:
-        pk = table['primaryKey']
+    if 'primaryKey' in table['schema']:
+        pk = table['schema']['primaryKey']
         if column in pk:
             return int(pk.index(column)) + 1
         offset = len(pk)
     else:
         pk = []
         offset = 0
-    columns_non_pk = [c['name'] for c in table['fields']
+    columns_non_pk = [c['name'] for c in table['schema']['fields']
                       if c['name'] not in pk]
     return columns_non_pk.index(column) + offset + 1
-
 
 def _get_crowfoot(cardinality, opt):
     """
     Return the arrow name for a crowfoot with given *cardinality*.
-
     Cardinalities are:
-
       * 0..1
       * 1
       * 0..N
