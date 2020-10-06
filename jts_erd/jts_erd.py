@@ -121,6 +121,8 @@ def get_graph(json_table_schema, **options):
                 head_namespace_name = json_table_schema['name']
                 head_table_name = reference['resource']
                 head_column_names = reference['fields']
+                if isinstance(head_column_names, str):
+                    head_column_names = [head_column_names]
                 head_table = present_tables[
                     (head_namespace_name, head_table_name)
                 ]
@@ -476,6 +478,8 @@ def _get_port(table, column):
     """
     if 'primaryKey' in table['schema']:
         pk = table['schema']['primaryKey']
+        if isinstance(pk, str):
+            pk = [pk]
         if column in pk:
             return int(pk.index(column)) + 1
         offset = len(pk)
