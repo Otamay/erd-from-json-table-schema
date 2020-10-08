@@ -1,15 +1,11 @@
-jts_erd
-=======
+erd-from-json-table-schema
+==========================
 
-Create an entity-relationship diagram from extended JSON-table-schemas
+Does what it says on the tin; creates an entity-relationship diagram from a [JSON Table Schema](https://specs.frictionlessdata.io/table-schema/)
 
-Python3 alpha code
+Massive thanks to [iburadempa](https://github.com/iburadempa/) for creating [jts_erd](https://github.com/iburadempa/jts_erd), from which this code is derived. jts_erd was designed with Postgres exports in mind; this code assumes a slightly different packaging structure and so probably won't work for that use case. 
 
-(JSON table schema is an extensible standard for describing tabular data:
-http://dataprotocols.org/json-table-schema
-)
+Development has used Python 3.8. 
 
-Documentation: https://jts_erd.readthedocs.org/
-
-If you provide patches, please also consider patching https://github.com/iburadempa/pg_jts/ accordingly.
+Documentation: https://erd-from-json-table-schema.readthedocs.org/
 
