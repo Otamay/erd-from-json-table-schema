@@ -47,6 +47,7 @@ options_defaults = {
     'display_crowfoots': True,
     'omit_isolated_tables': False,
     'default_namespace_name': 'public',
+    'table_comment_wrap_width': 70,
 }
 """
 Options and their default values.
@@ -216,7 +217,8 @@ def _graph_add_table(opt, graph, namespace_name, table):
     All keys from `options_defaults` are allowed in *opt*.
     """
     table_name = table['name']
-    table_comment = table.get('description', '')
+    table_comment = '<BR/>\n'.join(textwrap.wrap(table.get('description', ''), width=opt['table_comment_wrap_width']))
+    tooltip = table.get('description', '') or 'Table ' + table_name
     display = ['name', 'type', 'combined']
     title = (namespace_name + '.' if namespace_name != opt['default_namespace_name'] else '') + table_name
     html_row0 = '<TR>\n    <TD COLOR="black" BGCOLOR="lightgrey"'\
@@ -270,7 +272,7 @@ def _graph_add_table(opt, graph, namespace_name, table):
         fontname=opt['fontname'],
         fontsize=opt['fontsize'],
         shape='plaintext',
-        tooltip=table_comment or 'Table ' + table_name
+        tooltip=tooltip
     )
 
 
