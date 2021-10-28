@@ -35,6 +35,7 @@ import textwrap
 options_defaults = {
     'html_color_default': '#ccff99',
     'html_color_highlight': '#33cc99',
+    'html_color_header': 'lightgrey',
     'fontname': 'Helvetica',
     'fontsize': 8,
     'fontsize_title': 10,
@@ -54,6 +55,7 @@ Options and their default values.
 
 Options:
 
+  * **html_color_header**
   * **html_color_default**
   * **html_color_highlight**
   * **fontname**
@@ -221,10 +223,10 @@ def _graph_add_table(opt, graph, namespace_name, table):
     tooltip = table.get('description', '') or 'Table ' + table_name
     display = ['name', 'type', 'combined']
     title = (namespace_name + '.' if namespace_name != opt['default_namespace_name'] else '') + table_name
-    html_row0 = '<TR>\n    <TD COLOR="black" BGCOLOR="lightgrey"'\
+    html_row0 = '<TR>\n    <TD COLOR="black" BGCOLOR="%s"'\
                 ' COLSPAN="%s"><FONT POINT-SIZE="%s"><b>%s</b></FONT>'\
                 '<FONT POINT-SIZE="%s"><BR/>%s</FONT></TD>\n</TR>\n'\
-                % (str(len(display)), opt['fontsize_title'],
+                % (opt['html_color_header'], str(len(display)), opt['fontsize_title'],
                     title, opt['fontsize'], table_comment)
     html_rows = [html_row0]
     if opt['display_columns']:
