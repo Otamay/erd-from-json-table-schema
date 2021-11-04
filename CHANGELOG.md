@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.1.0] - 2020-11-04
+
 ### Added
 
 - Added options 'html_color_header' and 'html_color_header_for_table' to set background colour in table headers.
