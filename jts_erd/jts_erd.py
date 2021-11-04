@@ -36,6 +36,7 @@ options_defaults = {
     'html_color_default': '#ccff99',
     'html_color_highlight': '#33cc99',
     'html_color_header': 'lightgrey',
+    'html_color_header_for_table': {},
     'fontname': 'Helvetica',
     'fontsize': 8,
     'fontsize_title': 10,
@@ -56,6 +57,7 @@ Options and their default values.
 Options:
 
   * **html_color_header**
+  * **html_color_header_for_table**
   * **html_color_default**
   * **html_color_highlight**
   * **fontname**
@@ -223,10 +225,11 @@ def _graph_add_table(opt, graph, namespace_name, table):
     tooltip = table.get('description', '') or 'Table ' + table_name
     display = ['name', 'type', 'combined']
     title = (namespace_name + '.' if namespace_name != opt['default_namespace_name'] else '') + table_name
+    html_color_header = opt['html_color_header_for_table'][table_name] if table_name in opt['html_color_header_for_table'] else opt['html_color_header']
     html_row0 = '<TR>\n    <TD COLOR="black" BGCOLOR="%s"'\
                 ' COLSPAN="%s"><FONT POINT-SIZE="%s"><b>%s</b></FONT>'\
                 '<FONT POINT-SIZE="%s"><BR/>%s</FONT></TD>\n</TR>\n'\
-                % (opt['html_color_header'], str(len(display)), opt['fontsize_title'],
+                % (html_color_header, str(len(display)), opt['fontsize_title'],
                     title, opt['fontsize'], table_comment)
     html_rows = [html_row0]
     if opt['display_columns']:
