@@ -47,6 +47,7 @@ options_defaults = {
     'display_columns': True,
     'display_indexes': True,
     'display_crowfoots': True,
+    'display_tooltips': True,
     'omit_isolated_tables': False,
     'default_namespace_name': 'public',
     'table_comment_wrap_width': 70,
@@ -71,6 +72,7 @@ Options:
   * **display_columns**: bool
   * **display_indexes**: bool
   * **display_crowfoots**: bool
+  * **display_tooltips**: bool
   * **omit_isolated_tables**: bool
   * **default_namespace_name**: string  
 """
@@ -222,7 +224,9 @@ def _graph_add_table(opt, graph, namespace_name, table):
     """
     table_name = table['name']
     table_comment = '<BR/>\n'.join(textwrap.wrap(table.get('description', ''), width=opt['table_comment_wrap_width']))
-    tooltip = table.get('description', '') or 'Table ' + table_name
+    tooltip = ""
+    if opt['display_tooltips']:
+        tooltip = table.get('description', '') or 'Table ' + table_name
     display = ['name', 'type', 'combined']
     title = (namespace_name + '.' if namespace_name != opt['default_namespace_name'] else '') + table_name
     html_color_header = opt['html_color_header_for_table'][table_name] if table_name in opt['html_color_header_for_table'] else opt['html_color_header']
@@ -277,7 +281,7 @@ def _graph_add_table(opt, graph, namespace_name, table):
         fontname=opt['fontname'],
         fontsize=opt['fontsize'],
         shape='plaintext',
-        tooltip=tooltip
+        tooltip=tooltip,
     )
 
 
@@ -469,8 +473,8 @@ def _add_foreign_key_edge(schema_graph, tail_table_name, head_table_name,
         fontcolor=color,
         arrowtail=_get_crowfoot(card_tail, opt),
         arrowhead=_get_crowfoot(card_head, opt),
-        tooltip=tooltip,
-        labeltooltip=tooltip,
+        tooltip=tooltip if opt['display_tooltips'] else '',
+        labeltooltip=tooltip if opt['display_tooltips'] else '',
         dir='both'
     )
 
