@@ -237,8 +237,8 @@ def _graph_add_table(opt, graph, namespace_name, table):
                     title, opt['fontsize'], table_comment)
     html_rows = [html_row0]
     if opt['display_columns']:
-        if 'primaryKey' in table:
-            pk = table['primaryKey']
+        if 'primaryKey' in table['schema']:
+            pk = table['schema']['primaryKey']
             for i, col_name in enumerate(pk):
                 col = [c for c in table['schema']['fields'] if c['name'] == col_name][0]
                 col_display = _get_column_display(display, table, col)
