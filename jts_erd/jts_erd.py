@@ -254,8 +254,8 @@ def _graph_add_table(opt, graph, namespace_name, table):
             html_row = _get_table_row_html(opt, display, col_i + len(pk) + 1,
                                            col_display)
             html_rows.append(html_row)
-    if opt['display_indexes'] and 'indexes' in table:
-        indexes = [i for i in table['indexes'] if not i.get('unique')]
+    if opt['display_indexes'] and 'indexes' in table['schema']:
+        indexes = [i for i in table['schema']['indexes'] if not i.get('unique')]
         if indexes:
             index_definitions = ['<FONT POINT-SIZE="%s">%s</FONT>' %
                                  (opt['fontsize'], index['definition'])
